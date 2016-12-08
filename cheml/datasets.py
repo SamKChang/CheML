@@ -137,7 +137,7 @@ def _get_or_download_dataset(dataset_name, path=None):
         return filename
 
 
-def _open_HF_pickle(filename):
+def _open_pickle(filename):
     # hack from http://stackoverflow.com/questions/11305790/pickle-incompatability-of-numpy-arrays-between-python-2-and-3
     # Needs to be extensively tested between versions
 
@@ -155,52 +155,52 @@ def _open_HF_pickle(filename):
 def load_HF2(path=None, large=False):
     dataset_name = 'HF2_7K' if large else 'HF2_1K'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HF3(path=None, large=False):
     dataset_name = 'HF3_10K' if large else 'HF3_1K'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HF4(path=None, large=False):
     dataset_name = 'HF4_10K' if large else 'HF4_1K'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HF5(path=None, large=False):
     dataset_name = 'HF5_10K' if large else 'HF5_1K'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HF6(path=None, large=False):
     dataset_name = 'HF6_10K' if large else 'HF6_1K'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 
 def load_HX2(path=None):
     filename = _get_or_download_dataset('HX2', path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HX3(path=None):
     dataset_name = 'HX3'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HX4(path=None):
     dataset_name = 'HX4'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HX5(path=None):
     dataset_name = 'HX5'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def load_HX6(path=None):
     dataset_name = 'HX6'
     filename = _get_or_download_dataset(dataset_name, path=path)
-    return _open_HF_pickle(filename)
+    return _open_pickle(filename)
 
 def _gdb_align(bunch, align, only_planar, planarity_tol):
     pca = PCA()
@@ -254,7 +254,7 @@ def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
 
 def load_qm9(path=None, align=False, only_planar=False, planarity_tol=.01):
     filename = _get_or_download_dataset("QM9", path=path)
-    qm9_file = _open_HF_pickle(filename)
+    qm9_file = _open_pickle(filename)
     qm9_file['R'] = qm9_file['xyz']
     qm9_file['T'] = qm9_file['E']
     qm9_bunch = Bunch(**{k:v for k, v in qm9_file.items()
