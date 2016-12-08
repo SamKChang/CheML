@@ -211,7 +211,7 @@ def _gdb_align(bunch, align, only_planar, planarity_tol):
             np.zeros([(charges == 0).sum(), 3])])
         # the following evaluates how much variance is in the first two axes
         # before this, the algorithm was also using zero positions, leading
-        # to 454 planar molecules:
+        # to 454 planar molecules (for QM7):
         # pca.fit(positions).explained_variance_ratio_[:2].sum() #  
         # currently, the algorithm yields 415 planar molecules
         var_2D = pca.explained_variance_ratio_[:2].sum()
@@ -230,22 +230,6 @@ def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
     
     if align or only_planar:
         keep_molecule = _gdb_align(qm7_bunch, align, only_planar, planarity_tol)
-        #pca = PCA()
-        #keep_molecule = []
-        #for positions, charges in zip(qm7_bunch.R, qm7_bunch.Z):
-        #    transformed = np.vstack([
-        #        pca.fit_transform(positions[charges != 0]),
-        #        np.zeros([(charges == 0).sum(), 3])])
-        #    # the following evaluates how much variance is in the first two axes
-        #    # before this, the algorithm was also using zero positions, leading
-        #    # to 454 planar molecules:
-        #    # pca.fit(positions).explained_variance_ratio_[:2].sum() #  
-        #    # currently, the algorithm yields 415 planar molecules
-        #    var_2D = pca.explained_variance_ratio_[:2].sum()
-        #    keep = (not only_planar) or var_2D > 1 - planarity_tol
-        #    keep_molecule.append(keep)
-        #    if align and keep:
-        #        positions[:] = transformed
            
         if only_planar:
             keep_molecule = np.array(keep_molecule)
