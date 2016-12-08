@@ -63,7 +63,8 @@ dataset_info = dict(
     HX4=("HF/HX4.pkl", HF_URL_BASE + "data_HX4.pkl"),
     HX5=("HF/HX5.pkl", HF_URL_BASE + "data_HX5.pkl"),
     HX6=("HF/HX6.pkl", HF_URL_BASE + "data_HX6.pkl"),
-    QM7=("GDB13/qm7.mat", "http://quantum-machine.org/data/qm7.mat")
+    QM7=("GDB13/qm7.mat", "http://quantum-machine.org/data/qm7.mat"),
+    QM9=("GDB13/qm9.pkl", "https://ndownloader.figshare.com/files/7000853")
     )
 
 
@@ -201,6 +202,25 @@ def load_HX6(path=None):
     filename = _get_or_download_dataset(dataset_name, path=path)
     return _open_HF_pickle(filename)
 
+def _gdb_align(bunch, align, only_planar, planarity_tol):
+    pca = PCA()
+    keep_molecule = []
+    for positions, charges in zip(bunch.R, bunch.Z):
+        transformed = np.vstack([
+            pca.fit_transform(positions[charges != 0]),
+            np.zeros([(charges == 0).sum(), 3])])
+        # the following evaluates how much variance is in the first two axes
+        # before this, the algorithm was also using zero positions, leading
+        # to 454 planar molecules:
+        # pca.fit(positions).explained_variance_ratio_[:2].sum() #  
+        # currently, the algorithm yields 415 planar molecules
+        var_2D = pca.explained_variance_ratio_[:2].sum()
+        keep = (not only_planar) or var_2D > 1 - planarity_tol
+        keep_molecule.append(keep)
+        if align and keep:
+            positions[:] = transformed
+
+    return keep_molecule
 
 def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
     filename = _get_or_download_dataset("QM7", path=path)
@@ -209,22 +229,23 @@ def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
         if k in ['P', 'X', 'T', 'Z', 'R']})
     
     if align or only_planar:
-        pca = PCA()
-        keep_molecule = []
-        for positions, charges in zip(qm7_bunch.R, qm7_bunch.Z):
-            transformed = np.vstack([
-                pca.fit_transform(positions[charges != 0]),
-                np.zeros([(charges == 0).sum(), 3])])
-            # the following evaluates how much variance is in the first two axes
-            # before this, the algorithm was also using zero positions, leading
-            # to 454 planar molecules:
-            # pca.fit(positions).explained_variance_ratio_[:2].sum() #  
-            # currently, the algorithm yields 415 planar molecules
-            var_2D = pca.explained_variance_ratio_[:2].sum()
-            keep = (not only_planar) or var_2D > 1 - planarity_tol
-            keep_molecule.append(keep)
-            if align and keep:
-                positions[:] = transformed
+        keep_molecule = _gdb_align(qm7_bunch, align, only_planar, planarity_tol)
+        #pca = PCA()
+        #keep_molecule = []
+        #for positions, charges in zip(qm7_bunch.R, qm7_bunch.Z):
+        #    transformed = np.vstack([
+        #        pca.fit_transform(positions[charges != 0]),
+        #        np.zeros([(charges == 0).sum(), 3])])
+        #    # the following evaluates how much variance is in the first two axes
+        #    # before this, the algorithm was also using zero positions, leading
+        #    # to 454 planar molecules:
+        #    # pca.fit(positions).explained_variance_ratio_[:2].sum() #  
+        #    # currently, the algorithm yields 415 planar molecules
+        #    var_2D = pca.explained_variance_ratio_[:2].sum()
+        #    keep = (not only_planar) or var_2D > 1 - planarity_tol
+        #    keep_molecule.append(keep)
+        #    if align and keep:
+        #        positions[:] = transformed
            
         if only_planar:
             keep_molecule = np.array(keep_molecule)
@@ -247,6 +268,21 @@ def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
 
     return qm7_bunch
 
+def load_qm9(path=None, align=False, only_planar=False, planarity_tol=.01):
+    filename = _get_or_download_dataset("QM9", path=path)
+    qm9_file = _open_HF_pickle(filename)
+    qm9_file['R'] = qm9_file['xyz']
+    qm9_file['T'] = qm9_file['E']
+    qm9_bunch = Bunch(**{k:v for k, v in qm9_file.items()
+        if k in ['R', 'Z', 'T']})
 
+    if align or only_planar:
+        keep_molecule = _gdb_align(qm9_bunch, align, only_planar, planarity_tol)
 
+        if only_planar:
+            keep_molecule = np.array(keep_molecule)
+            qm9_bunch['T'] = qm9_bunch.T[keep_molecule]
+            qm9_bunch['Z'] = qm9_bunch.Z[keep_molecule]
+            qm9_bunch['R'] = qm9_bunch.R[keep_molecule]
 
+    return qm9_bunch
