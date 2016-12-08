@@ -11,6 +11,7 @@ import pickle
 from sklearn.datasets.base import Bunch
 from scipy.io import loadmat
 from sklearn.decomposition import PCA
+import tarfile
 
 
 def get_data_dirs(data_dir=None):
@@ -64,7 +65,7 @@ dataset_info = dict(
     HX5=("HF/HX5.pkl", HF_URL_BASE + "data_HX5.pkl"),
     HX6=("HF/HX6.pkl", HF_URL_BASE + "data_HX6.pkl"),
     QM7=("GDB13/qm7.mat", "http://quantum-machine.org/data/qm7.mat"),
-    QM9=("GDB13/qm9.pkl", "https://ndownloader.figshare.com/files/7000853")
+    QM9=("GDB13/qm9.pkl", "https://ndownloader.figshare.com/files/7003292")
     )
 
 
@@ -119,7 +120,24 @@ def _download(url, filename):
         raise
 
 
-def _get_or_download_dataset(dataset_name, path=None):
+def _tar_decompress(local_name, filename):
+
+    tar = tarfile.open(local_name)
+
+    # Assume single file member in tar file
+    members = tar.getnames()
+
+    if len(members) == 1:
+        content = tar.extractfile(members[0])
+        with open(filename, 'wb') as local_file:
+            local_file.write(content.read())
+    else:
+        tar.extractall(filename)
+
+    os.remove(local_name)
+
+
+def _get_or_download_dataset(dataset_name, path=None, suffix=None):
     rel_path, url = dataset_info[dataset_name]
     
     if path is None:
@@ -131,9 +149,19 @@ def _get_or_download_dataset(dataset_name, path=None):
         return filename
     else:
         filename = _get_first_writeable_path(paths, rel_path)
-        print("Downloading {} to {}...".format(url, filename))
-        _download(url, filename)
+        if suffix is not None:
+            local_name = filename + suffix
+        else:
+            local_name = filename
+        print("Downloading {} to {}...".format(url, local_name))
+        _download(url, local_name)
         print("... done.")
+
+        if suffix is not None:
+            if 'tar.gz' in suffix:
+                print("Decompress and tar file {}...".format(local_name))
+                _tar_decompress(local_name, filename)
+                print("... done.")
         return filename
 
 
@@ -253,7 +281,7 @@ def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
     return qm7_bunch
 
 def load_qm9(path=None, align=False, only_planar=False, planarity_tol=.01):
-    filename = _get_or_download_dataset("QM9", path=path)
+    filename = _get_or_download_dataset("QM9", path=path, suffix='.tar.gz')
     qm9_file = _open_pickle(filename)
     qm9_file['R'] = qm9_file['xyz']
     qm9_file['T'] = qm9_file['E']
@@ -261,7 +289,9 @@ def load_qm9(path=None, align=False, only_planar=False, planarity_tol=.01):
         if k in ['R', 'Z', 'T']})
 
     if align or only_planar:
+        print("processing qm9 molecules, this may take a while...")
         keep_molecule = _gdb_align(qm9_bunch, align, only_planar, planarity_tol)
+        print("... done.")
 
         if only_planar:
             keep_molecule = np.array(keep_molecule)
