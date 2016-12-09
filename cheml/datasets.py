@@ -283,7 +283,7 @@ def load_qm7(path=None, align=False, only_planar=False, planarity_tol=.01):
 def load_qm9(path=None, align=False, only_planar=False, planarity_tol=.01):
     filename = _get_or_download_dataset("QM9", path=path, suffix='.tar.gz')
     qm9_file = _open_pickle(filename)
-    qm9_file['R'] = qm9_file['xyz']
+    qm9_file['R'] = qm9_file['xyz'] * 1.88972598
     qm9_file['T'] = qm9_file['E']
     qm9_bunch = Bunch(**{k:v for k, v in qm9_file.items()
         if k in ['R', 'Z', 'T']})
